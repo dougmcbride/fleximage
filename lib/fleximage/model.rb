@@ -599,9 +599,7 @@ module Fleximage
       
       private
         def pre_create
-          puts "self.class.use_hashed_key = #{self.class.use_hashed_key}"
           self.hashed_key = ActiveSupport::SecureRandom.hex 16 if self.class.use_hashed_key
-          puts "self.hashed_key = #{self.hashed_key}"
         end
 
         # Perform pre save tasks.  Preprocess the image, and write it to DB.
