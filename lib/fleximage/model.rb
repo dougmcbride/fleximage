@@ -127,6 +127,9 @@ module Fleximage
         # Amazon S3 bucket where the master images are stored
         dsl_accessor :s3_bucket
         
+        # Use a hash instead of the primary key db value to store the image
+        dsl_accessor :use_hashed_key
+
         # Put uploads from different days into different subdirectories
         dsl_accessor :use_creation_date_based_directories, :default => true
         
@@ -214,6 +217,7 @@ module Fleximage
           after_destroy :delete_image_file
           before_save   :pre_save
           after_save    :post_save
+          before_create :pre_create
         end
         
         # execute configuration block
@@ -288,7 +292,7 @@ module Fleximage
       #   
       #   @some_image.file_path #=> /var/www/myapp/uploaded_images/123.png
       def file_path
-        "#{directory_path}/#{id}.#{extension}"
+        "#{directory_path}/#{key_name}.#{extension}"
       end
 
       # Returns original format of the image if the image_format column exists
@@ -449,12 +453,20 @@ module Fleximage
       def has_image?
         @uploaded_image || @output_image || has_saved_image?
       end
+
+      def key_name
+        self.class.use_hashed_key ? hashed_key : id
+      end
+
+      def s3_image_name
+          "#{key_name}.#{self.class.image_storage_format}"
+      end
       
       def has_saved_image?
         if self.class.db_store?
           !!image_file_data
         elsif self.class.s3_store?
-          AWS::S3::S3Object.exists?("#{id}.#{self.class.image_storage_format}", self.class.s3_bucket)
+          AWS::S3::S3Object.exists?(s3_image_name, self.class.s3_bucket)
         elsif self.class.file_store?
           File.exists?(file_path)
         end
@@ -502,11 +514,10 @@ module Fleximage
           
         elsif self.class.s3_store?
           # Load image from S3
-          filename = "#{id}.#{self.class.image_storage_format}"
           bucket   = self.class.s3_bucket
           
-          if AWS::S3::S3Object.exists?(filename, bucket)
-            @output_image = Magick::Image.from_blob(AWS::S3::S3Object.value(filename, bucket)).first
+          if AWS::S3::S3Object.exists?(s3_image_name, bucket)
+            @output_image = Magick::Image.from_blob(AWS::S3::S3Object.value(s3_image_name, bucket)).first
           end
         
         else
@@ -553,7 +564,7 @@ module Fleximage
         if self.class.db_store?
           update_attribute :image_file_data, nil unless frozen?
         elsif self.class.s3_store?
-          AWS::S3::S3Object.delete "#{id}.#{self.class.image_storage_format}", self.class.s3_bucket
+          AWS::S3::S3Object.delete s3_image_name, self.class.s3_bucket
         else
           File.delete(file_path) if File.exists?(file_path)
         end
@@ -587,6 +598,12 @@ module Fleximage
       end
       
       private
+        def pre_create
+          puts "self.class.use_hashed_key = #{self.class.use_hashed_key}"
+          self.hashed_key = ActiveSupport::SecureRandom.hex 16 if self.class.use_hashed_key
+          puts "self.hashed_key = #{self.hashed_key}"
+        end
+
         # Perform pre save tasks.  Preprocess the image, and write it to DB.
         def pre_save
           if @uploaded_image
@@ -615,7 +632,7 @@ module Fleximage
               
             elsif self.class.s3_store?
               blob = StringIO.new(@uploaded_image.to_blob)
-              AWS::S3::S3Object.store("#{id}.#{self.class.image_storage_format}", blob, self.class.s3_bucket)
+              AWS::S3::S3Object.store(s3_image_name, blob, self.class.s3_bucket)
               
             end
           end
