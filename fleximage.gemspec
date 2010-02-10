@@ -4,11 +4,11 @@
 # -*- encoding: utf-8 -*-
 
 Gem::Specification.new do |s|
-  s.name = %q{fleximage}
-  s.version = "1.0.2"
+  s.name = %q{dougmcbride-fleximage}
+  s.version = "1.0.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Alex Wayne", "Andrew White", "JJ Buckley", "Jason Lee", "Joshua Abbott", "Koji Ando", "Kouhei Sutou", "Lasse Jansen", "Lo\303\257c Guitaut", "Martin Vielsmaier", "Squeegy", "Vannoy"]
+  s.authors = ["Alex Wayne", "Andrew White", "JJ Buckley", "Jason Lee", "Joshua Abbott", "Koji Ando", "Kouhei Sutou", "Lasse Jansen", "Lo\303\257c Guitaut", "Martin Vielsmaier", "Squeegy", "Vannoy", "Doug McBride"]
   s.date = %q{2009-12-14}
   s.description = %q{Fleximage is a Rails plugin that tries to make image uploading and rendering
 super easy.
@@ -151,7 +151,7 @@ super easy.
      "test/unit/temp_image_test.rb",
      "test/unit/use_creation_date_based_directories_option_test.rb"
   ]
-  s.homepage = %q{http://github.com/Squeegy/fleximage}
+  s.homepage = %q{http://github.com/dougmcbride/fleximage}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.5}
